@@ -14,18 +14,18 @@ public enum AIStateEnum
     Talk = 5
 }
 
+public enum AIStateEngineEnum
+{
+    UseStoryMode,
+    ConditionForTransition
+}
+
 public class IAController : MoveController
 {
     [Header("IAController")]
 
     [SerializeField]
-    AIStateEnum startState = new AIStateEnum();
-
-    [SerializeField]
-    AIStateEnum currentState = new AIStateEnum();
-
-    [SerializeField]
-    AIStateEnum nextState = new AIStateEnum();
+    AIStateEngineEnum AIStateEngine = new AIStateEngineEnum();
 
     [Serializable]
     public class StateData
@@ -37,21 +37,65 @@ public class IAController : MoveController
     [SerializeField]
     public List<StateData> StateStory = new List<StateData>();
 
+    [SerializeField]
+    int CurrentStoryStateIndex = 0;
 
+    [SerializeField]
+    AIStateEnum startState = new AIStateEnum();
+
+    [SerializeField]
+    AIStateEnum currentState = new AIStateEnum();
+
+    [SerializeField]
+    AIStateEnum nextState = new AIStateEnum();
+
+   
 
     private void Start()
     {
-        currentState = startState;
+        if (AIStateEngine == AIStateEngineEnum.ConditionForTransition)        
+            currentState = startState;
+        else if (AIStateEngine == AIStateEngineEnum.UseStoryMode)
+        {
+            CurrentStoryStateIndex = 0;
+            LaunchStoryState();
+        }
+    }
+
+    void AssignNextStoryState()
+    {
+        if (CurrentStoryStateIndex < StateStory.Count - 1)
+        {
+            CurrentStoryStateIndex++;
+            LaunchStoryState();
+        }
+    }
+
+    void LaunchStoryState()
+    {
+        nextState = StateStory[CurrentStoryStateIndex].State;
+        
+        LaunchTransition();
+
+        if (StateStory[CurrentStoryStateIndex].Duration > 0)
+            Invoke("AssignNextStoryState", StateStory[CurrentStoryStateIndex].Duration);
     }
 
     void Update()
     {
         BehavingState();
+        if (AIStateEngine == AIStateEngineEnum.ConditionForTransition)
+        {
+            if (CheckForTransition())
+            {
+                ConditionForTransition();
+                LaunchTransition();
+            }
+        }
+        else if (AIStateEngine == AIStateEngineEnum.UseStoryMode)
+        {
+        //    LaunchTransition();
 
-        if (CheckForTransition())
-        {            
-            ConditionForTransition();
-            LaunchTransition();
         }
     }
 
@@ -217,5 +261,10 @@ public class IAController : MoveController
                 // TODO
                 break;
         }        
+    }
+
+    void voidLaunchStateStory()
+    {
+
     }
 }
